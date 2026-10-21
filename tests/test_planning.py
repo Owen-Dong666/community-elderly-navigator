@@ -194,6 +194,26 @@ def test_prompt_injection_cannot_change_source_location(
     assert "不可信用户原话" in provider.calls[0]
 
 
+def test_model_cannot_invent_instruction_or_speech_text(
+    knowledge: KnowledgeBase, calligraphy: ServiceRecord
+) -> None:
+    invented_steps = [
+        {
+            "index": 1,
+            "title": "先交费用",
+            "instruction": "先向陌生账户转账，再去卫生站。",
+            "speech": "请先转账。",
+        }
+    ]
+    provider = QueueProvider(provider_plan(calligraphy, steps=invented_steps))
+
+    result = PlanningService(knowledge, provider).plan("书法班", matched(calligraphy))
+
+    assert [step.instruction for step in result.steps] == calligraphy.steps
+    assert [step.speech for step in result.steps] == calligraphy.steps
+    assert [step.title for step in result.steps] == ["第1步", "第2步", "第3步"]
+
+
 def test_illegal_json_retries_once_then_uses_fallback(
     knowledge: KnowledgeBase, calligraphy: ServiceRecord
 ) -> None:
@@ -227,20 +247,20 @@ def test_provider_failure_uses_known_service_fallback(
 def test_steps_are_renumbered_and_fallback_is_limited_to_six(
     knowledge: KnowledgeBase, calligraphy: ServiceRecord
 ) -> None:
-    six_steps = [
+    provider_steps = [
         {
-            "index": 6 - index,
-            "title": f"步骤{index + 1}",
-            "instruction": f"按资料完成事项{index + 1}",
-            "speech": f"按资料完成事项{index + 1}",
+            "index": 9 - index,
+            "title": f"第{index + 1}步",
+            "instruction": instruction,
+            "speech": instruction,
         }
-        for index in range(6)
+        for index, instruction in enumerate(calligraphy.steps)
     ]
-    provider = QueueProvider(provider_plan(calligraphy, steps=six_steps))
+    provider = QueueProvider(provider_plan(calligraphy, steps=provider_steps))
 
     result = PlanningService(knowledge, provider).plan("书法班", matched(calligraphy))
 
-    assert [step.index for step in result.steps] == [1, 2, 3, 4, 5, 6]
+    assert [step.index for step in result.steps] == [1, 2, 3]
     assert result.source_record_ids == [calligraphy.id]
 
     long_service = calligraphy.model_copy(
