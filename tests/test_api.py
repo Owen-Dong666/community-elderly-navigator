@@ -150,3 +150,36 @@ def test_knowledge_route_can_be_disabled(demo_knowledge_path) -> None:
 
     assert response.status_code == 404
     assert "never-expose-this" not in response.text
+
+
+def test_simulator_page_has_accessible_controls_and_six_map_leds(
+    client: TestClient,
+) -> None:
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    html = response.text
+    assert html.count("data-led-index=") == 6
+    assert 'data-action="BUTTON_A"' in html
+    assert 'data-action="BUTTON_B"' in html
+    assert 'id="voice-button"' in html
+    assert 'id="query-input"' in html
+    assert "演示数据" in html
+    assert 'aria-label="语音输入"' in html
+    assert 'aria-live="polite"' in html
+
+
+def test_static_javascript_uses_api_routes_without_model_secret(
+    client: TestClient,
+) -> None:
+    response = client.get("/static/app.js")
+
+    assert response.status_code == 200
+    script = response.text
+    assert '"/api/v1/query"' in script
+    assert "/api/v1/sessions/" in script
+    assert "MODEL_API_KEY" not in script
+    assert "Bearer " not in script
+    assert "speechSynthesis" in script
+    assert "webkitSpeechRecognition" in script

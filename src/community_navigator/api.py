@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import unicodedata
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .config import Settings
@@ -60,6 +63,13 @@ def create_app(
     app.state.retriever = retriever
     app.state.planner = planner
     app.state.sessions = sessions
+
+    web_dir = Path(__file__).with_name("web")
+    app.mount("/static", StaticFiles(directory=web_dir), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def simulator() -> FileResponse:
+        return FileResponse(web_dir / "index.html")
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:

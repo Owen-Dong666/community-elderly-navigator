@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15382f">
+    <title>街坊办事小助手 · K10 模拟器</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">幸福里社区 · 智能便民服务</p>
+          <h1>街坊办事小助手</h1>
+          <p class="subtitle">说出想办的事，跟着屏幕一步一步走</p>
+        </div>
+        <div class="demo-badge" aria-label="当前使用演示数据">
+          <span class="badge-dot" aria-hidden="true"></span>
+          演示数据
+        </div>
+      </header>
+
+      <main>
+        <section class="query-card" aria-labelledby="query-heading">
+          <div class="query-copy">
+            <h2 id="query-heading">您想办理什么事情？</h2>
+            <p>可以说“我想报名书法班”，也可以直接打字。</p>
+          </div>
+          <form id="query-form" class="query-form">
+            <label class="sr-only" for="query-input">输入要查询的社区服务</label>
+            <div class="input-wrap">
+              <span aria-hidden="true">⌕</span>
+              <input
+                id="query-input"
+                name="query"
+                type="text"
+                maxlength="200"
+                autocomplete="off"
+                placeholder="例如：我想报名参加书法班"
+                aria-describedby="system-message"
+              >
+            </div>
+            <button id="voice-button" class="voice-button" type="button" aria-label="语音输入">
+              <span aria-hidden="true">◉</span>
+              <span>语音输入</span>
+            </button>
+            <button id="submit-button" class="submit-button" type="submit">开始导航</button>
+          </form>
+          <div class="examples" aria-label="示例问题">
+            <span>试一试：</span>
+            <button type="button" data-query="我想报名参加书法班">书法班报名</button>
+            <button type="button" data-query="哪里可以测血压">测量血压</button>
+            <button type="button" data-query="家里水管坏了找谁">水电报修</button>
+          </div>
+          <p id="system-message" class="system-message" role="status" aria-live="polite">系统已就绪</p>
+        </section>
+
+        <div class="simulator-grid">
+          <section class="map-card" aria-labelledby="map-heading">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">纸板地图模拟</p>
+                <h2 id="map-heading">幸福里社区</h2>
+              </div>
+              <div class="legend"><span class="legend-led"></span>目的地亮灯</div>
+            </div>
+
+            <div class="community-map" role="img" aria-label="社区六个服务地点示意图">
+              <div class="road road-horizontal" aria-hidden="true"></div>
+              <div class="road road-vertical" aria-hidden="true"></div>
+
+              <div class="place place-1">
+                <span class="map-led" data-led-index="1" aria-label="小区入口指示灯"></span>
+                <span class="place-icon" aria-hidden="true">门</span>
+                <strong>小区入口</strong>
+                <small>迎宾路</small>
+              </div>
+              <div class="place place-2">
+                <span class="map-led" data-led-index="2" aria-label="社区中心指示灯"></span>
+                <span class="place-icon" aria-hidden="true">社</span>
+                <strong>社区中心</strong>
+                <small>综合服务</small>
+              </div>
+              <div class="place place-3">
+                <span class="map-led" data-led-index="3" aria-label="卫生站指示灯"></span>
+                <span class="place-icon" aria-hidden="true">医</span>
+                <strong>卫生站</strong>
+                <small>健康服务</small>
+              </div>
+              <div class="place place-4">
+                <span class="map-led" data-led-index="4" aria-label="活动室指示灯"></span>
+                <span class="place-icon" aria-hidden="true">乐</span>
+                <strong>活动室</strong>
+                <small>文体活动</small>
+              </div>
+              <div class="place place-5">
+                <span class="map-led" data-led-index="5" aria-label="服务大厅指示灯"></span>
+                <span class="place-icon" aria-hidden="true">办</span>
+                <strong>服务大厅</strong>
+                <small>业务办理</small>
+              </div>
+              <div class="place place-6">
+                <span class="map-led" data-led-index="6" aria-label="便民驿站指示灯"></span>
+                <span class="place-icon" aria-hidden="true">驿</span>
+                <strong>便民驿站</strong>
+                <small>生活服务</small>
+              </div>
+            </div>
+            <p id="map-status" class="map-status" aria-live="polite">查询后，对应地点会亮起</p>
+          </section>
+
+          <section class="device-card" aria-labelledby="device-heading">
+            <div class="section-heading device-heading-row">
+              <div>
+                <p class="section-kicker">K10 硬件模拟</p>
+                <h2 id="device-heading">导航屏幕</h2>
+              </div>
+              <span id="connection-status" class="connection-status">● 电脑端已连接</span>
+            </div>
+
+            <div class="k10-shell">
+              <div class="screen" aria-label="K10 屏幕内容">
+                <div class="screen-topline">
+                  <span id="screen-service">等待查询</span>
+                  <span id="screen-progress">— / —</span>
+                </div>
+                <div class="screen-content" aria-live="polite">
+                  <span class="screen-label">当前提示</span>
+                  <h3 id="screen-title">请说出您要办理的事情</h3>
+                  <p id="screen-body">系统会查询社区资料，并给出清楚的办理步骤。</p>
+                </div>
+                <p id="screen-helper" class="screen-helper">演示数据</p>
+              </div>
+
+              <div class="speaker-strip" aria-live="polite">
+                <span class="speaker-icon" aria-hidden="true">◖))</span>
+                <span id="speaker-status">扬声器：等待播报</span>
+              </div>
+
+              <div class="device-controls" aria-label="K10 大按钮">
+                <button class="device-button button-a" type="button" data-action="BUTTON_A" aria-label="A 键，重复播报当前步骤">
+                  <span class="button-letter">A</span>
+                  <span>重复播报</span>
+                </button>
+                <button class="device-button button-b" type="button" data-action="BUTTON_B" aria-label="B 键，切换到下一步骤">
+                  <span class="button-letter">B</span>
+                  <span>下一步骤</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer>
+        本页面模拟 K10 屏幕、按钮、扬声器和地图 LED · 不采集或上传录音
+      </footer>
+    </div>
+  </body>
+</html>
