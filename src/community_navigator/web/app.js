@@ -2,6 +2,7 @@
 
 let currentSessionId = null;
 let requestPending = false;
+let canNavigate = false;
 
 const queryForm = document.querySelector("#query-form");
 const queryInput = document.querySelector("#query-input");
@@ -15,7 +16,7 @@ function setPending(pending) {
   submitButton.disabled = pending;
   voiceButton.disabled = pending;
   deviceButtons.forEach((button) => {
-    button.disabled = pending || !currentSessionId;
+    button.disabled = pending || !currentSessionId || !canNavigate;
   });
 }
 
@@ -46,6 +47,7 @@ async function submitQuery(text) {
     setMessage(state.status === "ready" ? "已找到服务，请按屏幕提示办理" : "请留意屏幕上的确认提示");
   } catch (error) {
     currentSessionId = null;
+    canNavigate = false;
     setMessage("暂时无法连接电脑端，请确认程序已经启动", true);
   } finally {
     setPending(false);
@@ -80,6 +82,7 @@ async function sendButton(type) {
 
 function renderDeviceState(state) {
   const device = state.device;
+  canNavigate = state.status === "ready" && !state.ended;
   document.querySelector("#screen-service").textContent = device.service_name || "等待查询";
   document.querySelector("#screen-title").textContent = device.title;
   document.querySelector("#screen-body").textContent = device.body || "请查看提示";
@@ -104,7 +107,7 @@ function renderDeviceState(state) {
   if (shouldSpeak) speak(device.speech_text);
 
   deviceButtons.forEach((button) => {
-    button.disabled = requestPending || state.ended || !currentSessionId;
+    button.disabled = requestPending || !currentSessionId || !canNavigate;
   });
 }
 

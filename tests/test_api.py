@@ -183,3 +183,5 @@ def test_static_javascript_uses_api_routes_without_model_secret(
     assert "Bearer " not in script
     assert "speechSynthesis" in script
     assert "webkitSpeechRecognition" in script
+    assert 'canNavigate = state.status === "ready" && !state.ended' in script
+    assert "!canNavigate" in script
