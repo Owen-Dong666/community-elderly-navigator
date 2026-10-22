@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">
+  <title id="title">社区老人办事导航员 Mind+ K10 积木流程总览</title>
+  <desc id="desc">七个积木组展示初始化、语音命令、串口接收、状态应用、LED 自制积木以及 A、B 键标志流程。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#425466"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1d2a35" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .panel { fill: #ffffff; stroke: #d6dee5; stroke-width: 3; filter: url(#shadow); }
+      .panel-title { font: 700 28px 'Microsoft YaHei', sans-serif; fill: #ffffff; }
+      .block-title { font: 700 23px 'Microsoft YaHei', sans-serif; fill: #ffffff; }
+      .block-text { font: 600 19px 'Microsoft YaHei', sans-serif; fill: #ffffff; }
+      .dark-text { font: 600 19px 'Microsoft YaHei', sans-serif; fill: #243744; }
+      .note { font: 500 18px 'Microsoft YaHei', sans-serif; fill: #526575; }
+      .mono { font: 700 18px Consolas, 'Microsoft YaHei', monospace; fill: #ffffff; }
+      .flow { fill: none; stroke: #425466; stroke-width: 5; marker-end: url(#arrow); }
+      .flow-label { font: 700 18px 'Microsoft YaHei', sans-serif; fill: #304554; paint-order: stroke; stroke: #f2f6f8; stroke-width: 8; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1200" fill="#eef4f6"/>
+  <text x="800" y="48" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="34" font-weight="700" fill="#20333f">社区老人办事导航员 · Mind+ K10 积木总览</text>
+  <text x="800" y="76" text-anchor="middle" class="note">上传模式 · 串口 0 / 115200 · 八个离线命令 · 六路地图 LED</text>
+
+  <g data-group="初始化">
+    <rect class="panel" x="38" y="100" width="420" height="490" rx="24"/>
+    <path d="M38 124a24 24 0 0 1 24-24h372a24 24 0 0 1 24 24v48H38Z" fill="#f4a340"/>
+    <text class="panel-title" x="66" y="148">① 初始化</text>
+    <rect x="65" y="195" width="366" height="58" rx="14" fill="#f4a340"/>
+    <text class="block-text" x="86" y="231">串口 0 波特率设为 115200</text>
+    <rect x="65" y="267" width="366" height="74" rx="14" fill="#4f9dd9"/>
+    <text class="block-text" x="86" y="297">P0/P1/P2/P8/P9/P12 输出</text>
+    <text class="block-text" x="86" y="325">调用：全部LED关闭</text>
+    <rect x="65" y="355" width="366" height="58" rx="14" fill="#ff8c69"/>
+    <text class="block-text" x="86" y="391">清零连接、按键、状态缓存</text>
+    <rect x="65" y="427" width="366" height="58" rx="14" fill="#9966cc"/>
+    <text class="block-text" x="86" y="463">显示初始页 · 语速 1</text>
+    <rect x="65" y="499" width="366" height="58" rx="14" fill="#3e88c7"/>
+    <text class="mono" x="86" y="535">串口输出 HELLO|1 ↵</text>
+  </g>
+
+  <g data-group="语音命令">
+    <rect class="panel" x="500" y="100" width="430" height="490" rx="24"/>
+    <path d="M500 124a24 24 0 0 1 24-24h382a24 24 0 0 1 24 24v48H500Z" fill="#6fbe44"/>
+    <text class="panel-title" x="528" y="148">② 语音命令</text>
+    <rect x="527" y="195" width="376" height="70" rx="14" fill="#6fbe44"/>
+    <text class="block-text" x="548" y="225">唤醒词：你好小行</text>
+    <text class="block-text" x="548" y="251">识别时长：10000 ms</text>
+    <rect x="527" y="279" width="376" height="118" rx="14" fill="#6fbe44"/>
+    <text class="block-text" x="548" y="309">ID 10—17</text>
+    <text class="block-text" x="548" y="337">书法班 / 太极拳 / 量血压 / 社保</text>
+    <text class="block-text" x="548" y="365">高龄津贴 / 老人助餐 / 水电报修</text>
+    <text class="block-text" x="548" y="390">办护照（未知信息演示）</text>
+    <rect x="527" y="411" width="376" height="116" rx="14" fill="#ff6680"/>
+    <text class="block-title" x="548" y="445">发送查询(文字)</text>
+    <text class="block-text" x="548" y="477">显示“正在查询”并熄灯</text>
+    <text class="mono" x="548" y="507">QUERY|中文查询 ↵</text>
+  </g>
+
+  <g data-group="串口接收">
+    <rect class="panel" x="970" y="100" width="590" height="490" rx="24"/>
+    <path d="M970 124a24 24 0 0 1 24-24h542a24 24 0 0 1 24 24v48H970Z" fill="#3e88c7"/>
+    <text class="panel-title" x="998" y="148">③ 串口接收 · 处理电脑指令(一行)</text>
+    <rect x="997" y="195" width="252" height="64" rx="14" fill="#3e88c7"/>
+    <text class="mono" x="1017" y="234">READY / PING</text>
+    <rect x="1271" y="195" width="262" height="64" rx="14" fill="#f4a340"/>
+    <text class="mono" x="1291" y="234">STATE_BEGIN</text>
+    <rect x="997" y="278" width="536" height="130" rx="14" fill="#ff8c69"/>
+    <text class="block-text" x="1017" y="309">frameOpen = 1 时写入缓存</text>
+    <text class="mono" x="1017" y="340">MODE · SERVICE · STEP · TITLE</text>
+    <text class="mono" x="1017" y="371">BODY · HELPER · SPEAK · LED</text>
+    <text class="block-text" x="1017" y="399">中途不更新屏幕，不点灯</text>
+    <rect x="997" y="427" width="252" height="116" rx="14" fill="#6fbe44"/>
+    <text class="mono" x="1017" y="461">STATE_END</text>
+    <text class="block-text" x="1017" y="493">应用完整状态</text>
+    <text class="block-text" x="1017" y="521">frameOpen = 0</text>
+    <rect x="1271" y="427" width="262" height="116" rx="14" fill="#d85353"/>
+    <text class="mono" x="1291" y="461">ERROR|文字</text>
+    <text class="block-text" x="1291" y="493">熄灯 · 显示 · 播报</text>
+    <text class="block-text" x="1291" y="521">错误信息给人看</text>
+  </g>
+
+  <path class="flow" d="M930 468 H965"/>
+  <text class="flow-label" x="947" y="447" text-anchor="middle">QUERY</text>
+
+  <g data-group="LED自制积木">
+    <rect class="panel" x="38" y="650" width="420" height="500" rx="24"/>
+    <path d="M38 674a24 24 0 0 1 24-24h372a24 24 0 0 1 24 24v48H38Z" fill="#4f9dd9"/>
+    <text class="panel-title" x="66" y="698">⑤ LED 自制积木</text>
+    <rect x="65" y="745" width="366" height="115" rx="14" fill="#4f9dd9"/>
+    <text class="block-title" x="86" y="779">全部LED关闭</text>
+    <text class="block-text" x="86" y="812">P0/P1/P2/P8/P9/P12</text>
+    <text class="block-text" x="86" y="840">全部写低电平</text>
+    <rect x="65" y="879" width="366" height="220" rx="14" fill="#4f9dd9"/>
+    <text class="block-title" x="86" y="913">点亮地图地点(编号)</text>
+    <text class="block-text" x="86" y="949">先全部关闭，再判断 1—6</text>
+    <text class="block-text" x="86" y="981">1→P0　2→P1　3→P2</text>
+    <text class="block-text" x="86" y="1013">4→P8　5→P9　6→P12</text>
+    <text class="block-text" x="86" y="1053">0 或非法编号：保持全灭</text>
+    <text class="block-text" x="86" y="1085">正常时最多只亮一个地点</text>
+  </g>
+
+  <g data-group="状态应用">
+    <rect class="panel" x="500" y="650" width="580" height="500" rx="24"/>
+    <path d="M500 674a24 24 0 0 1 24-24h532a24 24 0 0 1 24 24v48H500Z" fill="#9966cc"/>
+    <text class="panel-title" x="528" y="698">④ 应用完整状态（只由 STATE_END 调用）</text>
+    <rect x="527" y="745" width="526" height="96" rx="14" fill="#9966cc"/>
+    <text class="block-text" x="548" y="779">屏幕：服务名 · 步骤 · 标题 · 正文</text>
+    <text class="block-text" x="548" y="813">辅助提示：helperText</text>
+    <rect x="527" y="859" width="526" height="96" rx="14" fill="#4f9dd9"/>
+    <text class="block-text" x="548" y="893">地图：点亮地图地点(ledIndex)</text>
+    <text class="block-text" x="548" y="927">LED|0 与未知信息都保持全灭</text>
+    <rect x="527" y="973" width="526" height="96" rx="14" fill="#cf63a7"/>
+    <text class="block-text" x="548" y="1007">扬声器：中文语音合成 · 语速 1</text>
+    <text class="block-text" x="548" y="1041">播报 speechText</text>
+    <rect x="527" y="1087" width="526" height="40" rx="14" fill="#ff8c69"/>
+    <text class="block-text" x="548" y="1115">最后将 frameOpen 设为 0</text>
+  </g>
+
+  <path class="flow" d="M1120 590 V620 H1035 V642"/>
+  <text class="flow-label" x="1120" y="620">STATE_END</text>
+  <path class="flow" d="M500 904 H463"/>
+  <text class="flow-label" x="482" y="883" text-anchor="middle">LED</text>
+
+  <g data-group="A键标志">
+    <rect class="panel" x="1120" y="650" width="205" height="235" rx="24"/>
+    <path d="M1120 674a24 24 0 0 1 24-24h157a24 24 0 0 1 24 24v48h-205Z" fill="#27a782"/>
+    <text class="panel-title" x="1148" y="698">⑥ A 键</text>
+    <rect x="1145" y="747" width="155" height="106" rx="14" fill="#ff8c69"/>
+    <text class="block-text" x="1161" y="780">按下时只做：</text>
+    <text class="mono" x="1161" y="813">buttonAFlag</text>
+    <text class="mono" x="1161" y="841">= 1</text>
+  </g>
+
+  <g data-group="B键标志">
+    <rect class="panel" x="1355" y="650" width="205" height="235" rx="24"/>
+    <path d="M1355 674a24 24 0 0 1 24-24h157a24 24 0 0 1 24 24v48h-205Z" fill="#e09125"/>
+    <text class="panel-title" x="1383" y="698">⑦ B 键</text>
+    <rect x="1380" y="747" width="155" height="106" rx="14" fill="#ff8c69"/>
+    <text class="block-text" x="1396" y="780">按下时只做：</text>
+    <text class="mono" x="1396" y="813">buttonBFlag</text>
+    <text class="mono" x="1396" y="841">= 1</text>
+  </g>
+
+  <rect x="1120" y="920" width="440" height="174" rx="20" fill="#ffffff" stroke="#d6dee5" stroke-width="3"/>
+  <text class="dark-text" x="1145" y="955">主循环每 20 ms：</text>
+  <text class="dark-text" x="1145" y="988">A 标志 → 清零 → BUTTON_A</text>
+  <text class="dark-text" x="1145" y="1021">B 标志 → 清零 → BUTTON_B</text>
+  <text class="dark-text" x="1145" y="1054">5 秒无 PING → 熄灯并显示断线</text>
+  <path class="flow" d="M1222 885 V910"/>
+  <path class="flow" d="M1457 885 V910 H1500 V915"/>
+
+  <text x="800" y="1180" text-anchor="middle" class="note">主线：语音命令 → QUERY → 串口接收 → STATE_END → 屏幕 / 语音 / LED　　A、B 中断只设置标志</text>
+</svg>
