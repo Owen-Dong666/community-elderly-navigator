@@ -1,5 +1,11 @@
 """USB serial bridge for the Mind+ K10 device program."""
 
+from .controller import (
+    BridgeController,
+    BridgeGatewayError,
+    HttpNavigatorGateway,
+    NavigatorGateway,
+)
 from .protocol import (
     DeviceCommand,
     DeviceProtocolError,
@@ -12,9 +18,13 @@ from .protocol import (
 )
 
 __all__ = [
+    "BridgeController",
+    "BridgeGatewayError",
     "DeviceCommand",
     "DeviceProtocolError",
+    "HttpNavigatorGateway",
     "LineBuffer",
+    "NavigatorGateway",
     "encode_device_state",
     "encode_error",
     "encode_ping",
