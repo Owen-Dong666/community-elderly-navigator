@@ -170,6 +170,17 @@ def test_simulator_page_has_accessible_controls_and_six_map_leds(
     assert 'aria-live="polite"' in html
 
 
+def test_simulator_uses_inline_speaker_svg(client: TestClient) -> None:
+    response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "◖))" not in html
+    assert '<svg class="speaker-icon"' in html
+    assert 'viewBox="0 0 24 24"' in html
+    assert html.count('class="speaker-wave"') == 2
+
+
 def test_static_javascript_uses_api_routes_without_model_secret(
     client: TestClient,
 ) -> None:
