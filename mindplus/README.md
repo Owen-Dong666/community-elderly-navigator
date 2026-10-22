@@ -50,11 +50,28 @@ $env:MODEL_API_KEY=""
 .\.venv\Scripts\community-navigator.exe
 ```
 
+### 前期测试：云端 OpenAI 兼容 API
+
+把示例地址、模型名和密钥替换为所用平台提供的值。密钥只放在当前 PowerShell 的临时环境变量中，不写入 Mind+ 工程、代码或截图：
+
+```powershell
+$env:MODEL_PROVIDER="openai_compatible"
+$env:MODEL_BASE_URL="https://api.example.com"
+$env:MODEL_NAME="replace-with-model-name"
+$env:MODEL_API_KEY="replace-with-api-key"
+$env:MODEL_TIMEOUT_SECONDS="20"
+.\.venv\Scripts\community-navigator.exe
+```
+
+无论使用 Mock、云端 API 还是 Ollama，K10 都只收发同一套短指令，**模型切换不需要修改 Mind+ 积木**。
+
 最后启动串口桥，把 `COM5` 改为设备管理器中看到的端口：
 
 ```powershell
 .\.venv\Scripts\community-navigator-bridge.exe --port COM5
 ```
+
+桥每 2 秒向 K10 发送 `PING`。如果 K10 连续 5 秒没有收到心跳，会熄灭六路 LED 并显示电脑断开提示；这能避免断线后仍把旧地点亮着。
 
 ## 文件导航
 

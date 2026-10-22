@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -9,6 +11,9 @@ from community_navigator.api import create_app
 from community_navigator.config import Settings
 from community_navigator.planning import UNKNOWN_INFORMATION_MESSAGE
 from community_navigator.providers import MockProvider
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture
@@ -107,3 +112,22 @@ def test_complete_calligraphy_flow_remains_traceable(client: TestClient) -> None
     assert state["plan"]["source_record_ids"] == original_sources == [
         "calligraphy_class"
     ]
+
+
+def test_readme_orders_api_before_releasing_mindplus_and_starting_bridge() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    required_markers = (
+        "community-navigator.exe",
+        "community-navigator-bridge.exe --port COM",
+        "Mind+ 串口占用",
+        "qwen3:0.6b",
+        "mindplus/社区老人办事导航员-K10.mp",
+    )
+
+    for marker in required_markers:
+        assert marker in readme
+
+    api_start = readme.index("community-navigator.exe")
+    release_serial = readme.index("断开 Mind+ 串口")
+    bridge_start = readme.index("community-navigator-bridge.exe --port COM")
+    assert api_start < release_serial < bridge_start

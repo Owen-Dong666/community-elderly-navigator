@@ -1,6 +1,6 @@
 # 社区老人的办事导航员
 
-面向小学组“智能体设计与应用”项目的第一阶段原型：**电脑端智能体 + 浏览器 K10 模拟器**。
+面向小学组“智能体设计与应用”项目的可运行原型：**电脑端智能体 + 浏览器 K10 模拟器 + Mind+ K10 实体端**。
 
 老人可以用语音或文字询问社区活动、便民服务；系统查询本地社区资料，给出逐步指引，在模拟纸板地图上点亮地点，并用浏览器扬声器播报。知识库没有答案时，系统固定提示：
 
@@ -116,6 +116,45 @@ $env:MODEL_API_KEY=""
 
 `.env.example` 是配置项目清单；本程序直接读取系统环境变量，不会自动载入 `.env` 文件。
 
+## Mind+ K10 实体端
+
+实体端使用 Mind+ V2 上传模式，K10 通过 Type-C 串口与电脑端智能体双向通信；电脑继续负责知识库检索、步骤规划和安全校验。模型切换发生在电脑端，**从 Mock、云端 API 切换到 Ollama 时不需要修改任何 K10 积木**。
+
+交付入口：
+
+- [Mind+ 原生工程](mindplus/社区老人办事导航员-K10.mp)
+- [积木搭建步骤](mindplus/01-积木搭建步骤.md)
+- [接线与联调](mindplus/02-接线与联调.md)
+- [故障排查](mindplus/03-故障排查.md)
+- [积木流程总览](mindplus/assets/积木流程总览.svg)
+
+### 三分钟启动（Mock + K10）
+
+1. **先启动电脑端 API。** 第一次联调使用零密钥 Mock：
+
+   ```powershell
+   $env:MODEL_PROVIDER="mock"
+   .\.venv\Scripts\community-navigator.exe
+   ```
+
+   等终端显示服务运行在 `http://127.0.0.1:8000` 后再继续。云端模式和 Ollama 模式分别使用上面两节的环境变量与同一条启动命令。
+
+2. **在 Mind+ 上传。** 打开 `mindplus/社区老人办事导航员-K10.mp`，选择 K10 与正确 COM 端口，点击上传；初始页出现且六灯全灭后，**断开 Mind+ 串口**并关闭串口监视器。
+
+   > Mind+ 串口占用时，Python 串口桥无法打开同一个 COM 口。Mind+ 工程窗口可以继续开着，但设备连接必须断开。
+
+3. **确认 COM 号。** 在 Windows“设备管理器 → 端口（COM 和 LPT）”中，拔下再插入 K10；新增的端口就是目标，例如 `COM5`。换 USB 插口后号码可能改变。
+
+4. **最后启动串口桥。** 新开一个 PowerShell，把 `COM5` 换成实际端口：
+
+   ```powershell
+   .\.venv\Scripts\community-navigator-bridge.exe --port COM5
+   ```
+
+K10 上电会发送 `HELLO|1`，桥返回 `READY|智能体已连接`。桥每 2 秒发送一次 `PING`；K10 连续 5 秒收不到心跳时会熄灭全部地图 LED，并显示电脑连接已断开的提示。重新启动服务和桥后即可恢复。
+
+实体端与浏览器模拟器都使用“幸福里社区”虚构演示数据；时间、地点、材料和联系方式不能当作真实社区办事信息。
+
 ## 修改演示知识库
 
 数据文件位于 `data/demo_community.json`，编码必须保持 UTF-8。
@@ -171,9 +210,9 @@ $env:MODEL_API_KEY=""
 
 - 使用虚构的“幸福里社区”演示数据，正式展示时应明确标注。
 - 语音识别和播报依赖浏览器能力；录音不会发送给本项目的 Python 服务器，但浏览器是否使用在线语音服务以其自身隐私说明为准。不支持语音时文字输入仍可完整演示。
-- 当前未连接实体 K10、DFR1231 扩展板和真实 LED。
+- 本仓库已包含 K10、DFR1231 和六路 LED 的 Mind+ 工程与串口桥；本次软件验收没有可用的实体 K10，因此上传、屏幕、按键、扬声器和真实 LED 仍需按联调清单现场验证。
 - 当前会话保存在内存，程序重启后清空，适合单机现场演示。
-- `serial_protocol.py` 已定义 `QUERY`、`BUTTON_A`、`BUTTON_B`、`DEVICE_STATE` 四类版本 1 消息，后续 Mind+ 串口桥可直接对接。
+- `device_bridge/` 已实现 K10 的 `HELLO`、`QUERY`、`BUTTON_A`、`BUTTON_B` 短指令、状态帧、心跳和 USB 串口桥。
 
 ## 比赛材料披露提醒
 
@@ -192,5 +231,6 @@ src/community_navigator/planning.py   安全规划与来源校验
 src/community_navigator/providers.py  Mock / 云端 / Ollama 适配
 src/community_navigator/sessions.py   A/B 按钮和设备状态机
 src/community_navigator/web/          浏览器 K10 模拟器
+mindplus/                              K10 原生工程、积木图和接线联调手册
 tests/                                单元、接口与场景回归测试
 ```
