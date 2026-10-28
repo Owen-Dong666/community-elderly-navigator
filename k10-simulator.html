@@ -43,6 +43,19 @@
     .query-form input::placeholder { color: #718390; }
     .submit-button { min-width: 120px; border: 0; border-radius: 13px; background: #117f73; color: white; padding: 0 19px; font-weight: 800; }
     .submit-button:hover { background: #096a61; }
+    button:disabled { cursor: not-allowed; opacity: .55; transform: none !important; }
+    .connection-status { display: block; margin-top: 11px; color: #466a68; font-size: 13px; font-weight: 700; }
+    .chat-panel { margin-top: 20px; border: 1px solid #d9e8e3; border-radius: 16px; overflow: hidden; background: #f7faf8; }
+    .chat-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #dceae5; }
+    .chat-heading h3 { margin: 0; font-size: 16px; color: #244d4a; }
+    .new-chat { border: 1px solid #b9d6ce; border-radius: 9px; background: white; color: #17685c; padding: 7px 11px; font-size: 13px; font-weight: 800; }
+    .chat-history { min-height: 90px; max-height: 300px; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .chat-history:empty::before { content: "输入您的问题，开始对话。"; color: #768b88; font-size: 14px; }
+    .chat-message { max-width: min(85%, 760px); align-self: flex-start; padding: 10px 13px; border: 1px solid #d8e6e0; border-radius: 13px; background: white; color: #244653; font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .chat-message.user { align-self: flex-end; background: #e2f2eb; border-color: #cae6d9; }
+    .chat-message.error { background: #fff6ed; border-color: #ecd6bd; color: #814720; }
+    .chat-sources { display: block; margin-top: 6px; color: #648078; font-size: 12px; }
+    .pending-status { min-height: 20px; margin: 8px 2px 0; color: #637d78; font-size: 13px; }
     .workspace-grid { display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(360px, .94fr); gap: 22px; align-items: stretch; }
     .panel { padding: 24px; }
     .panel-kicker { color: #0e8b7c; font-size: 12px; letter-spacing: .12em; font-weight: 900; }
@@ -156,7 +169,8 @@
       <div>
         <span class="eyebrow">K10 · COMMUNITY NAVIGATOR</span>
         <h1>社区服务导航模拟器</h1>
-        <p class="subtitle">点击预设语句模拟 K10 语音识别，或输入问题测试。观察屏幕、按键和地图指示灯如何协同工作。</p>
+        <p class="subtitle">输入问题，或选择示例语句，与模型对话并体验社区服务导航。</p>
+        <span class="connection-status" id="connection-status" role="status" aria-live="polite">正在连接本地服务…</span>
       </div>
       <span class="demo-badge">离线模拟演示</span>
     </header>
@@ -176,10 +190,18 @@
         <button class="quick-action" type="button" data-query="家里水电坏了怎么报修"><span class="quick-number">07</span>水电报修</button>
         <button class="quick-action" type="button" data-query="我想办理护照"><span class="quick-number">08</span>办护照</button>
       </div>
+      <section class="chat-panel" aria-labelledby="chat-title">
+        <div class="chat-heading">
+          <h3 id="chat-title">对话记录</h3>
+          <button class="new-chat" id="new-chat" type="button">新对话</button>
+        </div>
+        <div class="chat-history" id="chat-history" role="log" aria-live="polite" aria-label="对话记录"></div>
+      </section>
       <form class="query-form" id="query-form">
-        <input id="query-input" type="text" maxlength="120" aria-label="输入服务问题" placeholder="例如：我想报名书法班" autocomplete="off">
-        <button class="submit-button" type="submit">发送问题</button>
+        <input id="query-input" type="text" maxlength="200" aria-label="输入服务问题" placeholder="例如：我想报名书法班，什么时候上课？" autocomplete="off">
+        <button class="submit-button" id="submit-button" type="submit">发送问题</button>
       </form>
+      <p class="pending-status" id="pending-status" role="status" aria-live="polite"></p>
     </section>
 
     <main class="workspace-grid">
@@ -238,92 +260,10 @@
       <summary>串口协议日志 <span class="protocol-hint">模拟 K10 与电脑端的消息往返</span></summary>
       <ol class="protocol-log" id="protocol-log" aria-label="串口协议日志"></ol>
     </details>
-    <p class="footer-note">本页仅演示交互逻辑与虚构社区数据，没有接入真实 LLM、社区系统、串口或实体 K10。具体服务信息请向当地工作人员确认。</p>
+    <p class="footer-note">硬件模拟演示 · 社区信息均为虚构数据。模型可能产生错误，实际服务信息请向当地工作人员确认。</p>
   </div>
 
   <script id="simulator-script">
-    const SERVICES = [
-      { id: 'calligraphy', name: '书法班', action: '报名书法班', location: '活动室', led: 4, aliases: ['书法班', '学书法', '练书法'] },
-      { id: 'taichi', name: '太极班', action: '参加太极班', location: '活动室', led: 4, aliases: ['太极晨练', '太极拳', '太极班', '练太极'] },
-      { id: 'bloodPressure', name: '量血压', action: '测量血压', location: '卫生站', led: 3, aliases: ['量血压', '测血压', '血压测量'] },
-      { id: 'socialSecurity', name: '社保咨询', action: '咨询社保', location: '服务大厅', led: 5, aliases: ['社保', '社会保险'] },
-      { id: 'elderAllowance', name: '高龄津贴咨询', action: '咨询高龄津贴', location: '服务大厅', led: 5, aliases: ['高龄津贴', '老人津贴', '长者津贴'] },
-      { id: 'meal', name: '老人助餐', action: '咨询老人助餐', location: '社区中心', led: 2, aliases: ['老人助餐', '老年助餐', '助餐服务', '助餐'] },
-      { id: 'repair', name: '水电报修', action: '报修水电问题', location: '便民驿站', led: 6, aliases: ['水电报修', '水电维修', '报修水电', '水电坏了'] },
-    ];
-
-    function normalizeQuery(text) {
-      return String(text || '').toLowerCase().replace(/[\s，。！？!?、；;,.：:“”"'（）()]/g, '');
-    }
-
-    function resolveService(text) {
-      const query = normalizeQuery(text);
-      if (!query || query.includes('护照')) return null;
-      const matches = SERVICES.filter(service => service.aliases.some(alias => query.includes(normalizeQuery(alias))));
-      return matches.length === 1 ? matches[0] : null;
-    }
-
-    function initialState() {
-      return { mode: 'idle', serviceId: null, stepIndex: 0, ledIndex: 0, query: '', message: '' };
-    }
-
-    function applyEvent(state, event) {
-      if (event.type === 'QUERY') {
-        const query = String(event.text || '').trim().slice(0, 120);
-        const service = resolveService(query);
-        if (!service) {
-          return {
-            mode: 'error', serviceId: null, stepIndex: 0, ledIndex: 0, query,
-            message: query ? '演示资料中没有这项信息，请向工作人员确认。' : '请输入想咨询的服务。',
-          };
-        }
-        return { mode: 'showing', serviceId: service.id, stepIndex: 0, ledIndex: service.led, query, message: '' };
-      }
-      if (event.type === 'BUTTON_A') {
-        if (state.mode === 'error') return initialState();
-        if (state.mode !== 'showing') return state;
-        return { ...state, stepIndex: Math.max(0, state.stepIndex - 1) };
-      }
-      if (event.type === 'BUTTON_B') {
-        if (state.mode === 'error') return initialState();
-        if (state.mode !== 'showing') return state;
-        return state.stepIndex >= 2 ? initialState() : { ...state, stepIndex: state.stepIndex + 1 };
-      }
-      return state;
-    }
-
-    function screenForState(state) {
-      if (state.mode === 'idle') {
-        return { mode: '待机', service: '等待咨询', step: '准备就绪', title: '您好，请开始', body: '选择上方的演示语句，了解社区服务导航流程。', helper: '演示数据 · A 上一步 / B 下一步' };
-      }
-      if (state.mode === 'error') {
-        return { mode: '需确认', service: '未找到演示服务', step: '请人工确认', title: '暂时无法指引', body: state.message, helper: '演示数据 · 按 A 或 B 返回待机' };
-      }
-      const service = SERVICES.find(item => item.id === state.serviceId);
-      const steps = [
-        { title: '前往' + service.location, body: '请前往' + service.location + '，准备咨询' + service.name + '。' },
-        { title: '说明需求', body: '请告诉工作人员：“我想' + service.action + '。”' },
-        { title: '确认安排', body: '请向工作人员确认当前时间、要求和下一步。' },
-      ];
-      const current = steps[state.stepIndex];
-      return {
-        mode: '服务指引', service: service.name, step: '第 ' + (state.stepIndex + 1) + ' / 3 步',
-        title: current.title, body: current.body,
-        helper: state.stepIndex === 2 ? '演示数据 · 按 B 返回待机' : '演示数据 · A 上一步 / B 下一步',
-      };
-    }
-
-    function protocolLinesForState(state) {
-      const screen = screenForState(state);
-      if (state.mode === 'idle') return ['STATE_BEGIN', 'READY|等待咨询', 'LED|0', 'STATE_END'];
-      if (state.mode === 'error') return ['STATE_BEGIN', 'ERROR|' + state.message, 'LED|0', 'STATE_END'];
-      return [
-        'STATE_BEGIN', 'SERVICE|' + screen.service, 'STEP|' + (state.stepIndex + 1) + '/3',
-        'TITLE|' + screen.title, 'BODY|' + screen.body, 'HELPER|' + screen.helper,
-        'SPEAK|' + screen.body, 'LED|' + state.ledIndex, 'STATE_END',
-      ];
-    }
-
     if (typeof document !== 'undefined') {
       const dom = {
         mode: document.getElementById('screen-mode'), service: document.getElementById('screen-service'),
@@ -331,13 +271,37 @@
         body: document.getElementById('screen-body'), helper: document.getElementById('screen-helper'),
         mapStatus: document.getElementById('map-status'), speakerStatus: document.getElementById('speaker-status'),
         speechToggle: document.getElementById('speech-toggle'), speechToggleLabel: document.getElementById('speech-toggle-label'),
-        log: document.getElementById('protocol-log'),
+        log: document.getElementById('protocol-log'), chat: document.getElementById('chat-history'),
+        connection: document.getElementById('connection-status'), pending: document.getElementById('pending-status'),
+        input: document.getElementById('query-input'), submit: document.getElementById('submit-button'),
+        newChat: document.getElementById('new-chat'), buttonA: document.getElementById('button-a'), buttonB: document.getElementById('button-b'),
       };
-      let currentState = initialState();
+      const localPage = window.location.protocol === 'file:';
+      const quickButtons = document.querySelectorAll('.quick-action');
       const speechAvailable = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window && typeof window.speechSynthesis.getVoices === 'function';
+      const idleDevice = () => ({ mode: 'idle', service_id: null, led: 0, location: '', step_index: 0, step_count: 0,
+        screen: { mode: '待机', service: '等待咨询', step: '准备就绪', title: '您好，请开始', body: '输入问题，或选择上方的示例语句。', helper: '演示数据 · A 上一步 / B 下一步' } });
+      let device = idleDevice();
+      let sessionId = null;
+      let generation = 0;
+      let busy = false;
+      let provider = '';
       let localVoice = null;
       let speechGeneration = 0;
       let speechOptOut = false;
+      let lastSpeech = '';
+
+      function setControls() {
+        const disabled = localPage || busy || !sessionId;
+        quickButtons.forEach(button => { button.disabled = disabled; });
+        dom.input.disabled = localPage || !sessionId;
+        dom.input.readOnly = busy && Boolean(sessionId);
+        dom.submit.disabled = disabled;
+        dom.buttonA.disabled = disabled;
+        dom.buttonB.disabled = disabled;
+        dom.newChat.disabled = localPage;
+        dom.pending.textContent = busy ? '正在处理，请稍候…' : '';
+      }
 
       function addLog(direction, line) {
         const row = document.createElement('li');
@@ -355,112 +319,181 @@
         dom.log.scrollTop = dom.log.scrollHeight;
       }
 
+      function addChat(kind, text, sources = []) {
+        const row = document.createElement('div');
+        row.className = 'chat-message ' + kind;
+        row.textContent = text;
+        if (sources.length) {
+          const note = document.createElement('small');
+          note.className = 'chat-sources';
+          note.textContent = '演示资料：' + sources.map(item => item.label).join('、');
+          row.append(note);
+        }
+        dom.chat.append(row);
+        dom.chat.scrollTop = dom.chat.scrollHeight;
+      }
+
       function render() {
-        const screen = screenForState(currentState);
+        const screen = device.screen;
         dom.mode.textContent = screen.mode;
-        dom.mode.classList.toggle('is-error', currentState.mode === 'error');
+        dom.mode.classList.toggle('is-error', device.mode === 'clarify');
         dom.service.textContent = screen.service;
         dom.step.textContent = screen.step;
         dom.title.textContent = screen.title;
         dom.body.textContent = screen.body;
         dom.helper.textContent = screen.helper;
         document.querySelectorAll('.map-point').forEach(point => {
-          const active = Number(point.dataset.led) === currentState.ledIndex;
+          const active = Number(point.dataset.led) === device.led;
           point.classList.toggle('is-active', active);
           point.setAttribute('aria-label', point.querySelector('.point-name').textContent + (active ? '，指示灯已点亮' : '，指示灯关闭'));
         });
-        const activeService = SERVICES.find(item => item.id === currentState.serviceId);
-        dom.mapStatus.textContent = activeService ? '目标地点：' + activeService.location + ' · LED ' + currentState.ledIndex + ' 已点亮' : '当前没有点亮的地点';
+        dom.mapStatus.textContent = device.led ? '目标地点：' + device.location + ' · LED ' + device.led + ' 已点亮' : '当前没有点亮的地点';
         document.querySelectorAll('#step-meter span').forEach((segment, index) => {
-          segment.classList.toggle('is-active', currentState.mode === 'showing' && index <= currentState.stepIndex);
+          segment.classList.toggle('is-active', device.mode === 'showing' && index <= device.step_index);
         });
       }
 
-      function speakCurrent() {
-        const generation = ++speechGeneration;
-        if (!speechAvailable) {
-          dom.speakerStatus.textContent = '当前浏览器不支持语音播报';
-          return;
-        }
-        window.speechSynthesis.cancel();
-        if (!localVoice) {
-          dom.speakerStatus.textContent = '当前浏览器没有可用的本地中文语音';
-          return;
-        }
-        if (!dom.speechToggle.checked) {
-          dom.speakerStatus.textContent = '播报已关闭';
-          return;
-        }
-        if (currentState.mode === 'idle') {
-          dom.speakerStatus.textContent = '等待播报';
-          return;
-        }
-        const utterance = new SpeechSynthesisUtterance(screenForState(currentState).body);
+      function cancelSpeech() {
+        ++speechGeneration;
+        if (speechAvailable) window.speechSynthesis.cancel();
+      }
+
+      function speak(text) {
+        lastSpeech = text || '';
+        cancelSpeech();
+        const current = speechGeneration;
+        if (!speechAvailable) { dom.speakerStatus.textContent = '当前浏览器不支持语音播报'; return; }
+        if (!localVoice) { dom.speakerStatus.textContent = '当前浏览器没有可用的本地中文语音'; return; }
+        if (!dom.speechToggle.checked) { dom.speakerStatus.textContent = '播报已关闭'; return; }
+        if (!text) { dom.speakerStatus.textContent = '等待播报'; return; }
+        const utterance = new window.SpeechSynthesisUtterance(text);
         utterance.lang = 'zh-CN';
         utterance.voice = localVoice;
         utterance.rate = .92;
-        utterance.onstart = () => { if (generation === speechGeneration) dom.speakerStatus.textContent = '正在播报当前内容'; };
-        utterance.onend = () => { if (generation === speechGeneration) dom.speakerStatus.textContent = '播报完成'; };
-        utterance.onerror = () => { if (generation === speechGeneration) dom.speakerStatus.textContent = '播报不可用，请阅读屏幕文字'; };
+        utterance.onstart = () => { if (current === speechGeneration) dom.speakerStatus.textContent = '正在播报当前内容'; };
+        utterance.onend = () => { if (current === speechGeneration) dom.speakerStatus.textContent = '播报完成'; };
+        utterance.onerror = () => { if (current === speechGeneration) dom.speakerStatus.textContent = '播报不可用，请阅读屏幕文字'; };
         dom.speakerStatus.textContent = '准备播报';
         window.speechSynthesis.speak(utterance);
       }
 
       function refreshVoices() {
         if (!speechAvailable) {
-          dom.speechToggle.checked = false;
-          dom.speechToggle.disabled = true;
-          dom.speechToggleLabel.textContent = '不支持';
-          dom.speakerStatus.textContent = '当前浏览器不支持语音播报';
-          return;
+          dom.speechToggle.checked = false; dom.speechToggle.disabled = true;
+          dom.speechToggleLabel.textContent = '不支持'; dom.speakerStatus.textContent = '当前浏览器不支持语音播报'; return;
         }
-        const previousVoice = localVoice;
+        const previous = localVoice;
         localVoice = window.speechSynthesis.getVoices().find(voice => voice.localService === true && /^zh(?:[-_]|$)/i.test(voice.lang)) || null;
         dom.speechToggle.disabled = !localVoice;
         dom.speechToggle.checked = Boolean(localVoice) && !speechOptOut;
         dom.speechToggleLabel.textContent = localVoice ? (dom.speechToggle.checked ? '已开启' : '已关闭') : '不支持';
-        if (!localVoice) {
-          ++speechGeneration;
-          window.speechSynthesis.cancel();
-          dom.speakerStatus.textContent = '当前浏览器没有可用的本地中文语音';
-        } else if (!previousVoice && currentState.mode !== 'idle' && dom.speechToggle.checked) {
-          speakCurrent();
-        } else if (currentState.mode === 'idle') {
-          dom.speakerStatus.textContent = '等待播报';
+        if (!localVoice) { cancelSpeech(); dom.speakerStatus.textContent = '当前浏览器没有可用的本地中文语音'; }
+        else if (!previous && lastSpeech && dom.speechToggle.checked) speak(lastSpeech);
+        else if (!lastSpeech) dom.speakerStatus.textContent = '等待播报';
+      }
+
+      async function request(url, body) {
+        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+        const result = await response.json();
+        if (!response.ok && !result.device) throw new Error(result.detail || '本地服务暂时不可用。');
+        return result;
+      }
+
+      function applyResult(result) {
+        device = result.device;
+        render();
+        (result.protocol || []).forEach(item => addLog(item.direction, item.line));
+      }
+
+      async function newSession() {
+        const current = ++generation;
+        const previousSession = sessionId;
+        cancelSpeech(); lastSpeech = '';
+        sessionId = null; busy = true; device = idleDevice();
+        dom.chat.replaceChildren(); dom.log.replaceChildren();
+        render(); setControls();
+        try {
+          const result = await request('/api/v1/sessions', { previous_session_id: previousSession });
+          if (current !== generation) return;
+          sessionId = result.session_id;
+          applyResult(result);
+          if (speechAvailable && localVoice) dom.speakerStatus.textContent = dom.speechToggle.checked ? '等待播报' : '播报已关闭';
+        } catch (error) {
+          if (current !== generation) return;
+          dom.connection.textContent = '无法连接本地服务，请先运行启动脚本。';
+          addChat('error', '无法创建对话，请检查本地服务。');
+        } finally {
+          if (current === generation) { busy = false; setControls(); }
         }
       }
 
-      function dispatch(event) {
-        if (event.type === 'QUERY') addLog('TX', 'QUERY|' + String(event.text || '').trim().slice(0, 120));
-        if (event.type === 'BUTTON_A' || event.type === 'BUTTON_B') addLog('TX', event.type);
-        currentState = applyEvent(currentState, event);
-        render();
-        protocolLinesForState(currentState).forEach(line => addLog('RX', line));
-        speakCurrent();
+      async function sendMessage(text) {
+        text = String(text || '').trim();
+        if (!text || busy || !sessionId) return;
+        const current = generation;
+        addChat('user', text); dom.input.value = '';
+        busy = true; setControls();
+        try {
+          const result = await request('/api/v1/sessions/' + encodeURIComponent(sessionId) + '/messages', { text });
+          if (current !== generation) return;
+          applyResult(result);
+          if (result.error) { addChat('error', result.error); return; }
+          addChat('assistant', result.reply, result.sources);
+          if (provider) dom.connection.textContent = (provider === 'ollama' ? '本地模型' : '云端测试') + ' · 模型已响应';
+          speak(result.speech);
+        } catch (error) {
+          if (current === generation) addChat('error', '本地服务连接失败，请检查服务后重试。');
+        } finally {
+          if (current === generation) { busy = false; setControls(); }
+        }
       }
 
-      document.querySelectorAll('.quick-action').forEach(button => {
-        button.addEventListener('click', () => dispatch({ type: 'QUERY', text: button.dataset.query }));
+      async function sendEvent(event) {
+        if (busy || !sessionId) return;
+        const current = generation;
+        busy = true; setControls();
+        try {
+          const result = await request('/api/v1/sessions/' + encodeURIComponent(sessionId) + '/events', { event });
+          if (current !== generation) return;
+          applyResult(result);
+          speak(result.speech);
+        } catch (error) {
+          if (current === generation) addChat('error', '本地服务连接失败，请检查服务后重试。');
+        } finally {
+          if (current === generation) { busy = false; setControls(); }
+        }
+      }
+
+      async function checkHealth() {
+        try {
+          const response = await fetch('/api/v1/health');
+          if (!response.ok) throw new Error('health');
+          const result = await response.json();
+          provider = result.provider;
+          dom.connection.textContent = (provider === 'ollama' ? '本地模型' : '云端测试') + ' · ' + result.detail;
+        } catch (error) { dom.connection.textContent = '无法连接本地服务，请先运行启动脚本。'; }
+      }
+
+      quickButtons.forEach(button => button.addEventListener('click', () => sendMessage(button.dataset.query)));
+      document.getElementById('query-form').addEventListener('submit', event => { event.preventDefault(); return sendMessage(dom.input.value); });
+      dom.buttonA.addEventListener('click', () => sendEvent('BUTTON_A'));
+      dom.buttonB.addEventListener('click', () => sendEvent('BUTTON_B'));
+      dom.newChat.addEventListener('click', () => newSession());
+      document.addEventListener('keydown', event => {
+        const target = event.target || {};
+        if (event.ctrlKey || event.altKey || event.metaKey || target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName || '')) return;
+        if (event.key && event.key.toLowerCase() === 'a') { event.preventDefault(); sendEvent('BUTTON_A'); }
+        if (event.key && event.key.toLowerCase() === 'b') { event.preventDefault(); sendEvent('BUTTON_B'); }
       });
-      document.getElementById('query-form').addEventListener('submit', event => {
-        event.preventDefault();
-        const input = document.getElementById('query-input');
-        dispatch({ type: 'QUERY', text: input.value });
-      });
-      document.getElementById('button-a').addEventListener('click', () => dispatch({ type: 'BUTTON_A' }));
-      document.getElementById('button-b').addEventListener('click', () => dispatch({ type: 'BUTTON_B' }));
       dom.speechToggle.addEventListener('change', () => {
         speechOptOut = !dom.speechToggle.checked;
         dom.speechToggleLabel.textContent = dom.speechToggle.checked ? '已开启' : '已关闭';
-        speakCurrent();
+        speak(lastSpeech);
       });
-      if (speechAvailable && typeof window.speechSynthesis.addEventListener === 'function') {
-        window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
-      }
-      refreshVoices();
-      render();
-      addLog('TX', 'HELLO|1');
-      protocolLinesForState(currentState).forEach(line => addLog('RX', line));
+      if (speechAvailable && typeof window.speechSynthesis.addEventListener === 'function') window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+      refreshVoices(); render(); setControls();
+      if (localPage) dom.connection.textContent = '请运行项目中的启动脚本，再打开本地服务页面。';
+      else { checkHealth(); newSession(); }
     }
   </script>
 </body>

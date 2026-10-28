@@ -1,5 +1,7 @@
 # 社区老人办事导航智能体实施计划
 
+> 这是早期计划记录。当前实现和启动方式请查看项目根目录的 README；七项服务及现有 Mind+ 行协议取代本计划中的旧设定。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 构建可在电脑上运行的社区老人办事导航智能体，以及能够模拟 K10 屏幕、按钮、扬声器状态和地图 LED 的浏览器界面。
