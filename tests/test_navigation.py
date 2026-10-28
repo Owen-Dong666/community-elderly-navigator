@@ -101,7 +101,7 @@ def test_followup_preserves_navigation_and_passes_real_history_and_all_knowledge
     assert navigation["step_index"] == 1
 
 
-def test_ambiguous_or_unsupported_request_clears_old_led_but_retains_chat():
+def test_ambiguous_or_unsupported_followup_keeps_current_navigation_and_chat():
     client, model = client_for(
         decision("start", "meal"),
         decision("clarify", reply="您想先咨询助餐还是水电报修？"),
@@ -110,10 +110,10 @@ def test_ambiguous_or_unsupported_request_clears_old_led_but_retains_chat():
     session = start(client)
     message(client, session, "助餐在哪里")
     result = message(client, session, "我想咨询助餐和报修").json()
-    assert result["device"]["led"] == 0 and result["device"]["mode"] == "clarify"
+    assert result["device"]["led"] == 2 and result["device"]["mode"] == "showing"
     assert "助餐" in result["reply"]
     result = message(client, session, "我还想办护照").json()
-    assert result["device"]["led"] == 0
+    assert result["device"]["led"] == 2
     assert "工作人员" in result["reply"]
     assert "编造" not in result["reply"]
     assert any(entry["content"] == "助餐在哪里" for entry in model.calls[-1][0])
@@ -199,13 +199,13 @@ def test_protocol_speech_matches_the_spoken_message_and_step():
     assert after_button["speech"] == after_button["device"]["screen"]["body"]
 
 
-def test_answer_without_a_source_requests_confirmation_and_turns_off_the_old_led():
+def test_answer_without_a_source_requests_confirmation_and_preserves_navigation():
     client, _ = client_for(decision("start", "meal"), decision("answer", "meal", []))
     session = start(client)
     message(client, session, "我想咨询助餐")
     result = message(client, session, "是否有某种未记录的补贴？").json()
     assert "工作人员" in result["reply"]
-    assert result["device"]["mode"] == "clarify" and result["device"]["led"] == 0
+    assert result["device"]["mode"] == "showing" and result["device"]["led"] == 2
 
 
 def test_new_session_discards_an_old_request_while_concurrent_events_are_rejected():
@@ -240,3 +240,107 @@ def test_html_and_configuration_do_not_expose_cloud_credentials():
     assert "CLOUD_API_KEY" not in response.text
     assert "离线模拟演示" in response.text
     assert client.get("/api/v1/health").status_code == 200
+
+
+@pytest.mark.parametrize("step", [0, 1, 2])
+@pytest.mark.parametrize("thanks", ["好的谢谢", "谢谢您！", "嗯，明白了", "太感谢了"])
+def test_thanks_preserves_every_navigation_step_and_invites_more_questions(step, thanks):
+    client, model = client_for(decision("start", "taichi"))
+    session = start(client)
+    message(client, session, "我要打太极")
+    for _ in range(step):
+        event(client, session, "BUTTON_B")
+    before = client.get(f"/api/v1/sessions/{session}").json()["device"]
+    response = message(client, session, thanks)
+    assert response.status_code == 200
+    result = response.json()
+    assert result["device"] == before
+    assert "很开心能帮助您" in result["reply"]
+    assert "还有其他需要导航" in result["reply"]
+    assert len(model.calls) == 1
+    assert any(item["line"] == "LED|4" for item in result["protocol"])
+
+
+@pytest.mark.parametrize("text", ["然后呢", "下一步"])
+def test_text_next_on_last_step_keeps_navigation_until_explicit_end(text):
+    client, _ = client_for(decision("start", "taichi"), decision("next"))
+    session = start(client)
+    message(client, session, "我要打太极")
+    event(client, session, "BUTTON_B")
+    event(client, session, "BUTTON_B")
+    result = message(client, session, text).json()
+    assert result["device"]["mode"] == "showing"
+    assert result["device"]["step_index"] == 2 and result["device"]["led"] == 4
+    assert "最后一步" in result["reply"]
+
+
+@pytest.mark.parametrize("text", ["请再说清楚一些", "不要结束导航", "怎么结束导航？", "结束导航后还能继续咨询吗？"])
+def test_model_cannot_end_navigation_without_an_explicit_user_command(text):
+    client, _ = client_for(decision("start", "taichi"), decision("end"))
+    session = start(client)
+    message(client, session, "我要打太极")
+    result = message(client, session, text).json()
+    assert result["device"]["mode"] == "showing" and result["device"]["led"] == 4
+
+
+@pytest.mark.parametrize("text", ["结束导航", "请帮我取消导航，谢谢", "不用导航了", "现在停止导航吧", "我不需要继续导航了", "好的，谢谢，结束导航", "请结束这次导航", "停止当前导航", "我不想继续导航了", "我不需要导航"])
+def test_explicit_end_command_stops_navigation_without_a_model_guess(text):
+    client, model = client_for(decision("start", "taichi"))
+    session = start(client)
+    message(client, session, "我要打太极")
+    result = message(client, session, text).json()
+    assert result["device"]["mode"] == "idle" and result["device"]["led"] == 0
+    assert "已结束" in result["reply"]
+    assert len(model.calls) == 1
+
+
+def test_thanks_with_a_new_service_question_still_uses_the_model():
+    client, model = client_for(decision("start", "taichi"), decision("answer", "meal", ["meal.location"]))
+    session = start(client)
+    message(client, session, "我要打太极")
+    result = message(client, session, "谢谢，我还想知道老人助餐在哪里？").json()
+    assert result["device"]["service_id"] == "meal" and result["device"]["led"] == 2
+    assert len(model.calls) == 2
+
+
+def test_unknown_query_without_an_active_navigation_keeps_all_lights_off():
+    client, _ = client_for(decision("unknown"))
+    session = start(client)
+    result = message(client, session, "我想办理护照").json()
+    assert result["device"]["mode"] == "clarify" and result["device"]["led"] == 0
+
+
+def test_next_with_valid_current_service_refs_uses_only_the_confirmed_step():
+    client, _ = client_for(
+        decision("start", "taichi"),
+        decision("next", "taichi", ["taichi.schedule"], "不要播报模型自行补充的安排"),
+    )
+    session = start(client)
+    message(client, session, "我要打太极")
+    result = message(client, session, "然后呢")
+    assert result.status_code == 200
+    payload = result.json()
+    assert payload["device"]["step_index"] == 1
+    assert payload["reply"] == payload["device"]["screen"]["body"]
+    assert payload["sources"] == []
+
+
+def test_next_with_unknown_fact_refs_is_still_rejected():
+    invalid = decision("next", "taichi", ["not-a-real-fact"])
+    client, _ = client_for(decision("start", "taichi"), invalid, invalid)
+    session = start(client)
+    message(client, session, "我要打太极")
+    result = message(client, session, "然后呢")
+    assert result.status_code == 502
+    assert result.json()["device"]["step_index"] == 0
+
+
+@pytest.mark.parametrize("next_decision", [decision("unknown"), decision("clarify", reply="您想先咨询什么？"), decision("answer", "taichi")])
+def test_followup_uncertainty_keeps_the_confirmed_navigation(next_decision):
+    client, _ = client_for(decision("start", "taichi"), next_decision)
+    session = start(client)
+    message(client, session, "我要打太极")
+    event(client, session, "BUTTON_B")
+    result = message(client, session, "我还有一个不太确定的问题").json()
+    assert result["device"]["mode"] == "showing"
+    assert result["device"]["step_index"] == 1 and result["device"]["led"] == 4

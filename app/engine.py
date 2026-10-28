@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from .config import ROOT
 from .model import Decision, ModelFailure, ModelFormatError
+from .navigation_intent import THANKS_REPLY, is_acknowledgement, is_end_request
 
 
 FACT_LABELS = {"location": "地点", "schedule": "时间", "materials": "准备事项", "details": "服务说明"}
@@ -79,6 +80,15 @@ class Navigator:
     def _clear(self, session, mode="idle", display_text=""):
         session.mode, session.service_id, session.step_index, session.display_text = mode, None, 0, display_text
 
+    def _request_confirmation(self, session, reply):
+        # A follow-up question must not discard an already confirmed destination.
+        if session.mode != "showing":
+            self._clear(session, "clarify", reply)
+
+    @staticmethod
+    def _remember(session, messages, reply):
+        session.history = [*messages, {"role": "assistant", "content": reply}][-20:]
+
     def _button(self, session, event):
         if session.mode != "showing":
             if event in ("BUTTON_A", "BUTTON_B", "END") and session.mode == "clarify":
@@ -112,11 +122,27 @@ class Navigator:
                     raise ModelFormatError("模型引用的演示资料无效。")
             result.service_id = service_id
         elif result.fact_ids:
-            raise ModelFormatError("模型引用的演示资料无效。")
+            service = self.services.get(session.service_id)
+            if result.action not in ("next", "previous", "repeat") or not service or result.service_id not in (None, session.service_id):
+                raise ModelFormatError("模型引用的演示资料无效。")
+            for fact in result.fact_ids:
+                prefix, separator, key = fact.partition(".")
+                if not separator or prefix != session.service_id or key not in service["facts"]:
+                    raise ModelFormatError("模型引用的演示资料无效。")
+            # Control actions use only the cached knowledge steps, never model prose.
+            result.fact_ids = []
         return result
 
     async def message(self, session, text):
         messages = [*session.history[-20:], {"role": "user", "content": text}]
+        if is_end_request(text):
+            self._clear(session)
+            reply = "已结束本次导航，您可以继续咨询其他服务。"
+            self._remember(session, messages, reply)
+            return reply, []
+        if is_acknowledgement(text):
+            self._remember(session, messages, THANKS_REPLY)
+            return THANKS_REPLY, []
         state = {"service_id": session.service_id, "step_index": session.step_index, "mode": session.mode}
         for attempt in range(2):
             try:
@@ -136,7 +162,7 @@ class Navigator:
             facts_text = "；".join(f"{item['label']}：{item['value']}" for item in sources)
             if decision.action == "answer" and not sources:
                 reply = "演示资料没有这项信息，请向工作人员确认。"
-                self._clear(session, "clarify", reply)
+                self._request_confirmation(session, reply)
             else:
                 if decision.action == "start" or session.service_id != service["id"] or session.mode != "showing":
                     session.mode, session.service_id, session.step_index, session.display_text = "showing", service["id"], 0, ""
@@ -147,18 +173,22 @@ class Navigator:
                     reply = f"好的，开始{service['name']}指引。" + (" " + facts_text if facts_text else "")
         elif decision.action == "clarify":
             reply = decision.reply.strip() or "您想先咨询哪项社区服务？"
-            self._clear(session, "clarify", reply)
+            self._request_confirmation(session, reply)
         elif decision.action == "unknown":
             reply = "演示资料中没有可确认的信息，请向工作人员咨询。"
-            self._clear(session, "clarify", reply)
+            self._request_confirmation(session, reply)
         elif decision.action == "chat":
             reply = decision.reply.strip() or "您好，您可以询问社区服务或活动。"
+        elif decision.action == "end":
+            reply = "当前导航仍为您保留。如需结束，请明确说“结束导航”。"
+        elif decision.action == "next" and session.mode == "showing" and session.step_index == len(self.services[session.service_id]["steps"]) - 1:
+            reply = "已经到达本次导航的最后一步，您可以继续咨询。如需结束，请说“结束导航”，或按 B 返回待机。"
         else:
             mapped = {"next": "BUTTON_B", "previous": "BUTTON_A", "repeat": "REPEAT", "end": "END"}[decision.action]
             self._button(session, mapped)
             device = self.device(session)
             reply = device["screen"]["body"] if device["mode"] == "showing" else "当前没有进行中的导航。"
-        session.history = [*messages, {"role": "assistant", "content": reply}][-20:]
+        self._remember(session, messages, reply)
         return reply, sources
 
     @staticmethod
