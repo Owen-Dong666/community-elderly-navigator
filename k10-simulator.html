@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>K10 社区服务导航 · 离线模拟演示</title>
+  <style>
+    :root {
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+      color: #173245;
+      background: #f3f5f1;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, summary:focus-visible {
+      outline: 3px solid #155ee7;
+      outline-offset: 3px;
+    }
+    .shell { max-width: 1440px; margin: auto; padding: 30px clamp(18px, 3vw, 44px) 36px; }
+    .masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #08776f; font-size: 13px; font-weight: 800; letter-spacing: .12em; }
+    .eyebrow::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #0aa895; box-shadow: 0 0 0 4px #d8f4e8; }
+    h1 { margin: 10px 0 8px; color: #142c3d; font-size: clamp(30px, 3.2vw, 48px); line-height: 1.17; letter-spacing: -.04em; }
+    .subtitle { margin: 0; max-width: 720px; color: #506476; font-size: 16px; line-height: 1.7; }
+    .demo-badge { flex: none; border: 1px solid #e1bc8b; border-radius: 999px; background: #fff3df; color: #704711; padding: 10px 15px; font-size: 14px; font-weight: 800; }
+    .input-panel, .panel, .protocol-panel { background: #fff; border: 1px solid #dce5e3; border-radius: 24px; box-shadow: 0 14px 38px rgba(33, 64, 78, .055); }
+    .input-panel { padding: 22px 25px 24px; margin-bottom: 22px; }
+    .section-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    h2 { margin: 0; color: #19394a; font-size: 21px; }
+    .section-note { margin: 0; color: #627788; font-size: 13px; }
+    .quick-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .quick-action { min-height: 51px; display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid #d4e2df; border-radius: 13px; background: #f6faf8; color: #1a4951; padding: 9px 12px; font-weight: 700; transition: transform .16s, background .16s, border-color .16s; }
+    .quick-action:hover { transform: translateY(-2px); background: #e6f4ef; border-color: #6dc6aa; }
+    .quick-number { display: grid; place-items: center; flex: none; width: 27px; height: 27px; border-radius: 8px; background: #dbeee7; color: #0c695d; font-size: 12px; }
+    .quick-action[data-query$="护照"] { background: #fff8f1; border-color: #eedbc4; color: #78491c; }
+    .quick-action[data-query$="护照"] .quick-number { background: #f8e8d5; color: #78491c; }
+    .query-form { display: flex; gap: 10px; margin-top: 16px; }
+    .query-form input { flex: 1; min-width: 0; height: 51px; border: 1px solid #c9d8d8; border-radius: 13px; padding: 0 16px; background: white; color: #173245; }
+    .query-form input::placeholder { color: #718390; }
+    .submit-button { min-width: 120px; border: 0; border-radius: 13px; background: #117f73; color: white; padding: 0 19px; font-weight: 800; }
+    .submit-button:hover { background: #096a61; }
+    .workspace-grid { display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(360px, .94fr); gap: 22px; align-items: stretch; }
+    .panel { padding: 24px; }
+    .panel-kicker { color: #0e8b7c; font-size: 12px; letter-spacing: .12em; font-weight: 900; }
+    .panel h2 { margin-top: 6px; }
+    .map-panel { display: flex; flex-direction: column; }
+    .map-board { position: relative; isolation: isolate; flex: 1; min-height: 500px; margin-top: 20px; overflow: hidden; border: 1px solid #e3dcca; border-radius: 22px; background: linear-gradient(135deg, #f8f4e9, #eff1e7 70%); padding: 27px; }
+    .map-board::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .45; background-image: radial-gradient(#c2cbbb 1.3px, transparent 1.3px); background-size: 24px 24px; }
+    .map-board::after { content: ""; position: absolute; inset: 17% 23%; z-index: -1; border: 4px dashed #bbc9b2; border-radius: 40% 48% 42% 36%; transform: rotate(-10deg); opacity: .75; }
+    .map-topline { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: #45624f; font-size: 13px; font-weight: 800; }
+    .map-compass { font-size: 18px; letter-spacing: .03em; }
+    .map-grid { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(95px, 1fr)); gap: 24px 18px; list-style: none; padding: 21px 0 4px; margin: 0; height: calc(100% - 22px); min-height: 410px; }
+    .map-point { display: flex; align-items: center; gap: 10px; min-width: 0; border: 1px solid #d4ddcf; border-radius: 15px; background: rgba(255,255,255,.91); box-shadow: 0 7px 18px rgba(42, 74, 59, .08); padding: 12px; transition: border-color .2s, box-shadow .2s, transform .2s; }
+    .map-point.is-active { border-color: #e99a3a; box-shadow: 0 0 0 3px #f9dcad, 0 12px 22px rgba(160, 100, 27, .18); transform: translateY(-2px); }
+    .led-lamp { position: relative; display: block; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 5px solid #cad5cf; background: #788e87; box-shadow: inset 0 2px 4px rgba(0,0,0,.25); }
+    .map-point.is-active .led-lamp { border-color: #ffe1a4; background: #ff9b25; box-shadow: 0 0 0 5px rgba(255,167,52,.17), 0 0 21px 8px rgba(255,154,35,.7), inset 0 1px 4px #fff2c0; }
+    .point-copy { min-width: 0; }
+    .point-name { display: block; color: #254654; font-size: 15px; font-weight: 800; line-height: 1.3; }
+    .point-pin { display: block; margin-top: 5px; color: #6b817d; font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+    .map-caption { display: flex; gap: 10px; align-items: center; margin-top: 18px; min-height: 46px; border-radius: 12px; background: #edf6f2; color: #2c5d51; padding: 10px 14px; font-size: 14px; font-weight: 700; }
+    .map-caption::before { content: "●"; color: #f19a2d; font-size: 19px; line-height: 1; }
+    .device-panel { display: flex; flex-direction: column; align-items: center; }
+    .device-panel .panel-heading { width: 100%; }
+    .device { width: min(100%, 370px); margin: 14px auto 0; border: 1px solid #102e3c; border-radius: 31px; background: linear-gradient(135deg, #2c5260, #143746 72%); box-shadow: 0 20px 40px rgba(13, 40, 53, .25), inset 0 2px 2px rgba(255,255,255,.2); padding: 21px 23px 24px; color: white; }
+    .device-brand { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; color: #d5f1ed; font-size: 12px; font-weight: 900; letter-spacing: .16em; }
+    .power-indicator { display: flex; align-items: center; gap: 6px; color: #9ddfca; font-size: 11px; letter-spacing: .08em; }
+    .power-indicator::before { content: ""; width: 7px; height: 7px; background: #44e5a9; border-radius: 50%; box-shadow: 0 0 9px #44e5a9; }
+    .screen-frame { border: 8px solid #0d2531; border-radius: 17px; box-shadow: inset 0 0 0 2px #356978, 0 2px 2px rgba(255,255,255,.12); overflow: hidden; }
+    .screen { min-height: 320px; display: flex; flex-direction: column; padding: 18px; background: #f9fcf7; color: #173a48; }
+    .screen-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; border-bottom: 1px solid #cbded8; padding-bottom: 11px; }
+    .screen-label { color: #0c786d; font-size: 12px; font-weight: 900; }
+    .screen-mode { border-radius: 999px; background: #e3f2ed; color: #0d7163; padding: 5px 8px; font-size: 11px; font-weight: 900; white-space: nowrap; }
+    .screen-mode.is-error { background: #ffebe0; color: #a54d22; }
+    .screen-service { margin-top: 18px; color: #587069; font-size: 13px; font-weight: 800; }
+    .screen-step { margin-top: 7px; color: #0c8975; font-size: 12px; font-weight: 900; }
+    .screen-title { margin: 13px 0 10px; color: #143443; font-size: clamp(25px, 2.2vw, 30px); line-height: 1.25; }
+    .screen-body { margin: 0; color: #294755; font-size: 19px; font-weight: 700; line-height: 1.55; overflow-wrap: anywhere; }
+    .screen-helper { margin-top: auto; padding-top: 15px; color: #537176; font-size: 12px; font-weight: 700; line-height: 1.45; }
+    .step-meter { display: flex; gap: 7px; margin-top: 15px; }
+    .step-meter span { height: 6px; flex: 1; border-radius: 8px; background: #d6e4df; }
+    .step-meter span.is-active { background: #20a289; }
+    .device-controls { display: flex; justify-content: space-between; gap: 28px; margin: 19px 10px 0; }
+    .hardware-button { width: 88px; height: 70px; border: 4px solid #f5f6e8; border-radius: 22px; background: #f7f8ec; color: #113c49; box-shadow: 0 5px 0 #91a3a1, 0 9px 16px rgba(0,0,0,.2); font-size: 25px; font-weight: 900; transition: transform .12s, box-shadow .12s; }
+    .hardware-button:hover { background: #fff; }
+    .hardware-button:active { transform: translateY(4px); box-shadow: 0 1px 0 #91a3a1, 0 3px 8px rgba(0,0,0,.2); }
+    .hardware-button.b { background: #f4c071; border-color: #ffdb9d; box-shadow: 0 5px 0 #ac7131, 0 9px 16px rgba(0,0,0,.2); }
+    .hardware-button.b:hover { background: #ffcf85; }
+    .hardware-button.b:active { box-shadow: 0 1px 0 #ac7131, 0 3px 8px rgba(0,0,0,.2); }
+    .button-labels { display: flex; justify-content: space-between; gap: 28px; margin: 12px 3px 0; color: #d8eae7; font-size: 12px; font-weight: 800; }
+    .button-labels span { width: 102px; text-align: center; }
+    .device-bottom { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 24px; }
+    .speaker-grill { display: flex; gap: 5px; align-items: center; height: 18px; }
+    .speaker-grill i { display: block; width: 4px; height: 13px; border-radius: 3px; background: #779ca5; }
+    .speaker-grill i:nth-child(2), .speaker-grill i:nth-child(4) { height: 18px; }
+    .device-bottom span { color: #b9d0d1; font-size: 10px; font-weight: 900; letter-spacing: .18em; }
+    .speaker-panel { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; max-width: 370px; margin-top: 20px; border-radius: 14px; background: #edf5f3; padding: 14px 15px; }
+    .speaker-copy { min-width: 0; }
+    .speaker-copy strong { display: block; font-size: 13px; color: #244e50; }
+    .speaker-copy small { display: block; margin-top: 3px; color: #5e7477; font-size: 12px; }
+    .switch { display: flex; align-items: center; gap: 8px; white-space: nowrap; color: #2e5855; font-size: 13px; font-weight: 800; }
+    .switch input { appearance: none; position: relative; width: 40px; height: 24px; margin: 0; border-radius: 99px; background: #9fb2ad; cursor: pointer; }
+    .switch input::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.22); transition: transform .15s; }
+    .switch input:checked { background: #0e8978; }
+    .switch input:checked::after { transform: translateX(16px); }
+    .switch input:disabled { opacity: .5; cursor: not-allowed; }
+    .protocol-panel { margin-top: 22px; overflow: hidden; }
+    .protocol-panel summary { display: flex; align-items: center; gap: 10px; list-style: none; cursor: pointer; padding: 17px 23px; color: #234551; font-weight: 900; }
+    .protocol-panel summary::-webkit-details-marker { display: none; }
+    .protocol-panel summary::before { content: "+"; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #e4f2ef; color: #137c70; font-size: 19px; line-height: 1; }
+    .protocol-panel[open] summary::before { content: "−"; }
+    .protocol-hint { margin-left: auto; color: #667e85; font-size: 12px; font-weight: 600; }
+    .protocol-log { max-height: 290px; overflow: auto; margin: 0; padding: 13px 23px 20px; list-style: none; border-top: 1px solid #e6efec; background: #112e3a; color: #d4ede6; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .protocol-log li { display: grid; grid-template-columns: 50px 30px 1fr; gap: 7px; padding: 2px 0; overflow-wrap: anywhere; }
+    .log-time { color: #82a5aa; }
+    .log-direction { color: #fbc779; font-weight: 800; }
+    .log-direction.rx { color: #81e0c5; }
+    .footer-note { margin: 19px 0 0; color: #6b7e84; font-size: 12px; line-height: 1.6; }
+    @media (max-width: 900px) {
+      .workspace-grid { grid-template-columns: 1fr; }
+      .map-board { min-height: 430px; }
+      .map-grid { min-height: 340px; }
+    }
+    @media (max-width: 650px) {
+      .shell { padding-top: 20px; }
+      .masthead { display: block; }
+      .demo-badge { display: inline-block; margin-top: 15px; }
+      .input-panel, .panel { padding: 18px; }
+      .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .query-form { flex-direction: column; }
+      .submit-button { min-height: 48px; }
+      .map-board { padding: 17px; min-height: 470px; }
+      .map-grid { gap: 13px; min-height: 385px; }
+      .map-point { padding: 9px; }
+      .point-name { font-size: 13px; }
+      .point-pin { font-size: 10px; }
+      .led-lamp { width: 22px; height: 22px; border-width: 4px; }
+      .protocol-hint { display: none; }
+    }
+    @media (max-width: 380px) {
+      .map-point { gap: 6px; }
+      .point-name { font-size: 12px; }
+      .point-pin { letter-spacing: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="masthead">
+      <div>
+        <span class="eyebrow">K10 · COMMUNITY NAVIGATOR</span>
+        <h1>社区服务导航模拟器</h1>
+        <p class="subtitle">点击预设语句模拟 K10 语音识别，或输入问题测试。观察屏幕、按键和地图指示灯如何协同工作。</p>
+      </div>
+      <span class="demo-badge">离线模拟演示</span>
+    </header>
+
+    <section class="input-panel" aria-labelledby="query-title">
+      <div class="section-heading">
+        <h2 id="query-title">选择一句话，开始演示</h2>
+        <p class="section-note">模拟现有 Mind+ 程序的 8 个语音命令</p>
+      </div>
+      <div class="quick-grid" id="quick-grid">
+        <button class="quick-action" type="button" data-query="我想报名参加书法班"><span class="quick-number">01</span>书法班</button>
+        <button class="quick-action" type="button" data-query="我想参加太极晨练"><span class="quick-number">02</span>太极晨练</button>
+        <button class="quick-action" type="button" data-query="哪里可以免费量血压"><span class="quick-number">03</span>量血压</button>
+        <button class="quick-action" type="button" data-query="我想咨询社保"><span class="quick-number">04</span>社保</button>
+        <button class="quick-action" type="button" data-query="我想咨询高龄津贴"><span class="quick-number">05</span>高龄津贴</button>
+        <button class="quick-action" type="button" data-query="老人助餐点在哪里"><span class="quick-number">06</span>老人助餐</button>
+        <button class="quick-action" type="button" data-query="家里水电坏了怎么报修"><span class="quick-number">07</span>水电报修</button>
+        <button class="quick-action" type="button" data-query="我想办理护照"><span class="quick-number">08</span>办护照</button>
+      </div>
+      <form class="query-form" id="query-form">
+        <input id="query-input" type="text" maxlength="120" aria-label="输入服务问题" placeholder="例如：我想报名书法班" autocomplete="off">
+        <button class="submit-button" type="submit">发送问题</button>
+      </form>
+    </section>
+
+    <main class="workspace-grid">
+      <section class="panel map-panel" aria-labelledby="map-title">
+        <div class="panel-heading">
+          <span class="panel-kicker">COMMUNITY MAP / 01</span>
+          <h2 id="map-title">六地点指示地图</h2>
+        </div>
+        <div class="map-board">
+          <div class="map-topline"><span>演示社区 · 地点示意</span><span class="map-compass" aria-hidden="true">N ↑</span></div>
+          <ol class="map-grid" id="map-grid">
+            <li class="map-point" data-led="1"><span class="led-lamp" aria-hidden="true"></span><span class="point-copy"><span class="point-name">小区入口</span><span class="point-pin">LED 1 · P0</span></span></li>
+            <li class="map-point" data-led="2"><span class="led-lamp" aria-hidden="true"></span><span class="point-copy"><span class="point-name">社区中心</span><span class="point-pin">LED 2 · P1</span></span></li>
+            <li class="map-point" data-led="3"><span class="led-lamp" aria-hidden="true"></span><span class="point-copy"><span class="point-name">卫生站</span><span class="point-pin">LED 3 · P2</span></span></li>
+            <li class="map-point" data-led="4"><span class="led-lamp" aria-hidden="true"></span><span class="point-copy"><span class="point-name">活动室</span><span class="point-pin">LED 4 · P8</span></span></li>
+            <li class="map-point" data-led="5"><span class="led-lamp" aria-hidden="true"></span><span class="point-copy"><span class="point-name">服务大厅</span><span class="point-pin">LED 5 · P9</span></span></li>
+            <li class="map-point" data-led="6"><span class="led-lamp" aria-hidden="true"></span><span class="point-copy"><span class="point-name">便民驿站</span><span class="point-pin">LED 6 · P12</span></span></li>
+          </ol>
+        </div>
+        <div class="map-caption" id="map-status" role="status" aria-live="polite">当前没有点亮的地点</div>
+      </section>
+
+      <section class="panel device-panel" aria-labelledby="device-title">
+        <div class="panel-heading">
+          <span class="panel-kicker">VIRTUAL HARDWARE / 02</span>
+          <h2 id="device-title">K10 交互设备</h2>
+        </div>
+        <div class="device" aria-label="虚拟 K10 设备">
+          <div class="device-brand"><span>UNIHIKER K10</span><span class="power-indicator">POWER ON</span></div>
+          <div class="screen-frame">
+            <div class="screen" role="status" aria-live="polite" aria-atomic="true">
+              <div class="screen-top"><span class="screen-label">社区服务导航</span><span class="screen-mode" id="screen-mode">待机</span></div>
+              <div class="screen-service" id="screen-service">等待咨询</div>
+              <div class="screen-step" id="screen-step">准备就绪</div>
+              <h3 class="screen-title" id="screen-title">您好，请开始</h3>
+              <p class="screen-body" id="screen-body">选择上方的演示语句，了解社区服务导航流程。</p>
+              <div class="screen-helper" id="screen-helper">演示数据 · A 上一步 / B 下一步</div>
+              <div class="step-meter" id="step-meter" aria-hidden="true"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="device-controls">
+            <button class="hardware-button" id="button-a" type="button" aria-label="A 键：上一步">A</button>
+            <button class="hardware-button b" id="button-b" type="button" aria-label="B 键：下一步，最后一步返回待机">B</button>
+          </div>
+          <div class="button-labels"><span>上一步</span><span>下一步 / 返回</span></div>
+          <div class="device-bottom"><div class="speaker-grill" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><span>BUILT-IN SPEAKER</span></div>
+        </div>
+        <div class="speaker-panel">
+          <div class="speaker-copy"><strong>语音播报</strong><small id="speaker-status" role="status" aria-live="polite">等待播报</small></div>
+          <label class="switch"><input id="speech-toggle" type="checkbox" checked aria-label="开启或关闭语音播报"><span id="speech-toggle-label">已开启</span></label>
+        </div>
+      </section>
+    </main>
+
+    <details class="protocol-panel">
+      <summary>串口协议日志 <span class="protocol-hint">模拟 K10 与电脑端的消息往返</span></summary>
+      <ol class="protocol-log" id="protocol-log" aria-label="串口协议日志"></ol>
+    </details>
+    <p class="footer-note">本页仅演示交互逻辑与虚构社区数据，没有接入真实 LLM、社区系统、串口或实体 K10。具体服务信息请向当地工作人员确认。</p>
+  </div>
+
+  <script id="simulator-script">
+    const SERVICES = [
+      { id: 'calligraphy', name: '书法班', action: '报名书法班', location: '活动室', led: 4, aliases: ['书法班', '学书法', '练书法'] },
+      { id: 'taichi', name: '太极班', action: '参加太极班', location: '活动室', led: 4, aliases: ['太极晨练', '太极拳', '太极班', '练太极'] },
+      { id: 'bloodPressure', name: '量血压', action: '测量血压', location: '卫生站', led: 3, aliases: ['量血压', '测血压', '血压测量'] },
+      { id: 'socialSecurity', name: '社保咨询', action: '咨询社保', location: '服务大厅', led: 5, aliases: ['社保', '社会保险'] },
+      { id: 'elderAllowance', name: '高龄津贴咨询', action: '咨询高龄津贴', location: '服务大厅', led: 5, aliases: ['高龄津贴', '老人津贴', '长者津贴'] },
+      { id: 'meal', name: '老人助餐', action: '咨询老人助餐', location: '社区中心', led: 2, aliases: ['老人助餐', '老年助餐', '助餐服务', '助餐'] },
+      { id: 'repair', name: '水电报修', action: '报修水电问题', location: '便民驿站', led: 6, aliases: ['水电报修', '水电维修', '报修水电', '水电坏了'] },
+    ];
+
+    function normalizeQuery(text) {
+      return String(text || '').toLowerCase().replace(/[\s，。！？!?、；;,.：:“”"'（）()]/g, '');
+    }
+
+    function resolveService(text) {
+      const query = normalizeQuery(text);
+      if (!query || query.includes('护照')) return null;
+      const matches = SERVICES.filter(service => service.aliases.some(alias => query.includes(normalizeQuery(alias))));
+      return matches.length === 1 ? matches[0] : null;
+    }
+
+    function initialState() {
+      return { mode: 'idle', serviceId: null, stepIndex: 0, ledIndex: 0, query: '', message: '' };
+    }
+
+    function applyEvent(state, event) {
+      if (event.type === 'QUERY') {
+        const query = String(event.text || '').trim().slice(0, 120);
+        const service = resolveService(query);
+        if (!service) {
+          return {
+            mode: 'error', serviceId: null, stepIndex: 0, ledIndex: 0, query,
+            message: query ? '演示资料中没有这项信息，请向工作人员确认。' : '请输入想咨询的服务。',
+          };
+        }
+        return { mode: 'showing', serviceId: service.id, stepIndex: 0, ledIndex: service.led, query, message: '' };
+      }
+      if (event.type === 'BUTTON_A') {
+        if (state.mode === 'error') return initialState();
+        if (state.mode !== 'showing') return state;
+        return { ...state, stepIndex: Math.max(0, state.stepIndex - 1) };
+      }
+      if (event.type === 'BUTTON_B') {
+        if (state.mode === 'error') return initialState();
+        if (state.mode !== 'showing') return state;
+        return state.stepIndex >= 2 ? initialState() : { ...state, stepIndex: state.stepIndex + 1 };
+      }
+      return state;
+    }
+
+    function screenForState(state) {
+      if (state.mode === 'idle') {
+        return { mode: '待机', service: '等待咨询', step: '准备就绪', title: '您好，请开始', body: '选择上方的演示语句，了解社区服务导航流程。', helper: '演示数据 · A 上一步 / B 下一步' };
+      }
+      if (state.mode === 'error') {
+        return { mode: '需确认', service: '未找到演示服务', step: '请人工确认', title: '暂时无法指引', body: state.message, helper: '演示数据 · 按 A 或 B 返回待机' };
+      }
+      const service = SERVICES.find(item => item.id === state.serviceId);
+      const steps = [
+        { title: '前往' + service.location, body: '请前往' + service.location + '，准备咨询' + service.name + '。' },
+        { title: '说明需求', body: '请告诉工作人员：“我想' + service.action + '。”' },
+        { title: '确认安排', body: '请向工作人员确认当前时间、要求和下一步。' },
+      ];
+      const current = steps[state.stepIndex];
+      return {
+        mode: '服务指引', service: service.name, step: '第 ' + (state.stepIndex + 1) + ' / 3 步',
+        title: current.title, body: current.body,
+        helper: state.stepIndex === 2 ? '演示数据 · 按 B 返回待机' : '演示数据 · A 上一步 / B 下一步',
+      };
+    }
+
+    function protocolLinesForState(state) {
+      const screen = screenForState(state);
+      if (state.mode === 'idle') return ['STATE_BEGIN', 'READY|等待咨询', 'LED|0', 'STATE_END'];
+      if (state.mode === 'error') return ['STATE_BEGIN', 'ERROR|' + state.message, 'LED|0', 'STATE_END'];
+      return [
+        'STATE_BEGIN', 'SERVICE|' + screen.service, 'STEP|' + (state.stepIndex + 1) + '/3',
+        'TITLE|' + screen.title, 'BODY|' + screen.body, 'HELPER|' + screen.helper,
+        'SPEAK|' + screen.body, 'LED|' + state.ledIndex, 'STATE_END',
+      ];
+    }
+
+    if (typeof document !== 'undefined') {
+      const dom = {
+        mode: document.getElementById('screen-mode'), service: document.getElementById('screen-service'),
+        step: document.getElementById('screen-step'), title: document.getElementById('screen-title'),
+        body: document.getElementById('screen-body'), helper: document.getElementById('screen-helper'),
+        mapStatus: document.getElementById('map-status'), speakerStatus: document.getElementById('speaker-status'),
+        speechToggle: document.getElementById('speech-toggle'), speechToggleLabel: document.getElementById('speech-toggle-label'),
+        log: document.getElementById('protocol-log'),
+      };
+      let currentState = initialState();
+      const speechAvailable = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window && typeof window.speechSynthesis.getVoices === 'function';
+      let localVoice = null;
+      let speechGeneration = 0;
+      let speechOptOut = false;
+
+      function addLog(direction, line) {
+        const row = document.createElement('li');
+        const time = document.createElement('span');
+        const side = document.createElement('span');
+        const content = document.createElement('span');
+        time.className = 'log-time';
+        side.className = 'log-direction' + (direction === 'RX' ? ' rx' : '');
+        time.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+        side.textContent = direction;
+        content.textContent = line;
+        row.append(time, side, content);
+        dom.log.append(row);
+        while (dom.log.children.length > 120) dom.log.firstElementChild.remove();
+        dom.log.scrollTop = dom.log.scrollHeight;
+      }
+
+      function render() {
+        const screen = screenForState(currentState);
+        dom.mode.textContent = screen.mode;
+        dom.mode.classList.toggle('is-error', currentState.mode === 'error');
+        dom.service.textContent = screen.service;
+        dom.step.textContent = screen.step;
+        dom.title.textContent = screen.title;
+        dom.body.textContent = screen.body;
+        dom.helper.textContent = screen.helper;
+        document.querySelectorAll('.map-point').forEach(point => {
+          const active = Number(point.dataset.led) === currentState.ledIndex;
+          point.classList.toggle('is-active', active);
+          point.setAttribute('aria-label', point.querySelector('.point-name').textContent + (active ? '，指示灯已点亮' : '，指示灯关闭'));
+        });
+        const activeService = SERVICES.find(item => item.id === currentState.serviceId);
+        dom.mapStatus.textContent = activeService ? '目标地点：' + activeService.location + ' · LED ' + currentState.ledIndex + ' 已点亮' : '当前没有点亮的地点';
+        document.querySelectorAll('#step-meter span').forEach((segment, index) => {
+          segment.classList.toggle('is-active', currentState.mode === 'showing' && index <= currentState.stepIndex);
+        });
+      }
+
+      function speakCurrent() {
+        const generation = ++speechGeneration;
+        if (!speechAvailable) {
+          dom.speakerStatus.textContent = '当前浏览器不支持语音播报';
+          return;
+        }
+        window.speechSynthesis.cancel();
+        if (!localVoice) {
+          dom.speakerStatus.textContent = '当前浏览器没有可用的本地中文语音';
+          return;
+        }
+        if (!dom.speechToggle.checked) {
+          dom.speakerStatus.textContent = '播报已关闭';
+          return;
+        }
+        if (currentState.mode === 'idle') {
+          dom.speakerStatus.textContent = '等待播报';
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(screenForState(currentState).body);
+        utterance.lang = 'zh-CN';
+        utterance.voice = localVoice;
+        utterance.rate = .92;
+        utterance.onstart = () => { if (generation === speechGeneration) dom.speakerStatus.textContent = '正在播报当前内容'; };
+        utterance.onend = () => { if (generation === speechGeneration) dom.speakerStatus.textContent = '播报完成'; };
+        utterance.onerror = () => { if (generation === speechGeneration) dom.speakerStatus.textContent = '播报不可用，请阅读屏幕文字'; };
+        dom.speakerStatus.textContent = '准备播报';
+        window.speechSynthesis.speak(utterance);
+      }
+
+      function refreshVoices() {
+        if (!speechAvailable) {
+          dom.speechToggle.checked = false;
+          dom.speechToggle.disabled = true;
+          dom.speechToggleLabel.textContent = '不支持';
+          dom.speakerStatus.textContent = '当前浏览器不支持语音播报';
+          return;
+        }
+        const previousVoice = localVoice;
+        localVoice = window.speechSynthesis.getVoices().find(voice => voice.localService === true && /^zh(?:[-_]|$)/i.test(voice.lang)) || null;
+        dom.speechToggle.disabled = !localVoice;
+        dom.speechToggle.checked = Boolean(localVoice) && !speechOptOut;
+        dom.speechToggleLabel.textContent = localVoice ? (dom.speechToggle.checked ? '已开启' : '已关闭') : '不支持';
+        if (!localVoice) {
+          ++speechGeneration;
+          window.speechSynthesis.cancel();
+          dom.speakerStatus.textContent = '当前浏览器没有可用的本地中文语音';
+        } else if (!previousVoice && currentState.mode !== 'idle' && dom.speechToggle.checked) {
+          speakCurrent();
+        } else if (currentState.mode === 'idle') {
+          dom.speakerStatus.textContent = '等待播报';
+        }
+      }
+
+      function dispatch(event) {
+        if (event.type === 'QUERY') addLog('TX', 'QUERY|' + String(event.text || '').trim().slice(0, 120));
+        if (event.type === 'BUTTON_A' || event.type === 'BUTTON_B') addLog('TX', event.type);
+        currentState = applyEvent(currentState, event);
+        render();
+        protocolLinesForState(currentState).forEach(line => addLog('RX', line));
+        speakCurrent();
+      }
+
+      document.querySelectorAll('.quick-action').forEach(button => {
+        button.addEventListener('click', () => dispatch({ type: 'QUERY', text: button.dataset.query }));
+      });
+      document.getElementById('query-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const input = document.getElementById('query-input');
+        dispatch({ type: 'QUERY', text: input.value });
+      });
+      document.getElementById('button-a').addEventListener('click', () => dispatch({ type: 'BUTTON_A' }));
+      document.getElementById('button-b').addEventListener('click', () => dispatch({ type: 'BUTTON_B' }));
+      dom.speechToggle.addEventListener('change', () => {
+        speechOptOut = !dom.speechToggle.checked;
+        dom.speechToggleLabel.textContent = dom.speechToggle.checked ? '已开启' : '已关闭';
+        speakCurrent();
+      });
+      if (speechAvailable && typeof window.speechSynthesis.addEventListener === 'function') {
+        window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+      }
+      refreshVoices();
+      render();
+      addLog('TX', 'HELLO|1');
+      protocolLinesForState(currentState).forEach(line => addLog('RX', line));
+    }
+  </script>
+</body>
+</html>
